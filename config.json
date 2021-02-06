@@ -1,0 +1,11 @@
+{ 
+    "Token"     : "Bot Token",
+
+    "Push"      : "3000",
+    "Pull"      : "3001",
+
+    "TrackDMs"  : false,
+    "TrackAll"  : false,
+
+    "Listen"    : ["ChannelID"]
+}
