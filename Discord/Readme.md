@@ -1,4 +1,4 @@
-#A simple discord bot communication using ZeroMQ 
+# A simple discord bot communication using ZeroMQ 
 - bot.js is node file
 - CDiscord.nut is the ZeroMQ SqMod file
 - config.json contains configuration for bot
