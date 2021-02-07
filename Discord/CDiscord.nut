@@ -2,7 +2,7 @@
 
 /*
 *   Simple discord bot for SqMod using ZeroMQ.
-*	(~) Spiller
+*   (~) Spiller
 */
 
 // ------------------------------------------------------- //
@@ -23,7 +23,7 @@ SqCore.On().ScriptLoaded.Connect(this, function ()
 
 class CDiscord
 {
-    Config 	= null;
+    Config  = null;
     Sockets = null;
 
     // ------------------------------------------------------- //
@@ -35,8 +35,8 @@ class CDiscord
 
         this.Sockets =
         {
-            Listener  	= Context.Socket(SqZmq.PULL),
-            Socket		= Context.Socket(SqZmq.PUSH)
+            Listener    = Context.Socket(SqZmq.PULL),
+            Socket      = Context.Socket(SqZmq.PUSH)
         };
 
         // ------------------------------------------------------- //
@@ -47,8 +47,8 @@ class CDiscord
         // ------------------------------------------------------- //
         // Bind ZMQ to ports //
 
-        this.Sockets.Listener	.Connect (format("tcp://127.0.0.1:%s", this.Config.Push));
-        this.Sockets.Socket		.Bind	 (format("tcp://127.0.0.1:%s", this.Config.Pull));
+        this.Sockets.Listener   .Connect (format("tcp://127.0.0.1:%s", this.Config.Push));
+        this.Sockets.Socket     .Bind    (format("tcp://127.0.0.1:%s", this.Config.Pull));
 
         SqLog.Scs(format("ZeroMQ Connected @ PUSH %s, PULL %s", this.Config.Pull, this.Config.Push));
 
@@ -133,9 +133,9 @@ class CDiscord
     {
         local Data =
         {
-            Function 	= "Send",
-            Message		= Message,
-            Channel		= Channel
+            Function    = "Send",
+            Message     = Message,
+            Channel     = Channel
         };
 
         this.Sockets.Socket.SendString(JSON.Stringify(Data));
@@ -151,19 +151,19 @@ class CDiscord
 
         local Table =
         {
-            Color 		= null,
-            Title		= null,
-            URL			= null,
-            Author		= {
-                Name	= null,
-                Image	= null,
-                URL		= null
+            Color       = null,
+            Title       = null,
+            URL         = null,
+            Author      = {
+                Name    = null,
+                Image   = null,
+                URL     = null
             },
             Description = null,
-            Thumbnail	= null,
-            Footer 		= {
-                Text	= null,
-                Image 	= null
+            Thumbnail   = null,
+            Footer      = {
+                Text    = null,
+                Image   = null
             }
         };
 
@@ -176,9 +176,9 @@ class CDiscord
     {
         local Data =
         {
-            Function 	= "Embed",
-            Channel 	= Channel,
-            Embed		= EmbedData
+            Function    = "Embed",
+            Channel     = Channel,
+            Embed       = EmbedData
         };
 
         this.Sockets.Socket.SendString(JSON.Stringify(Data));
@@ -191,9 +191,9 @@ class CDiscord
     {
         local Data =
         {
-            Function 	= "Direct",
-            Message		= Message,
-            User		= UserID
+            Function    = "Direct",
+            Message     = Message,
+            User        = UserID
         };
 
         this.Sockets.Socket.SendString(JSON.Stringify(Data));

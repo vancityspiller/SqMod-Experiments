@@ -2,7 +2,7 @@
 
 /*
 *   Simple discord bot for SqMod using ZeroMQ.
-*	(~) Spiller
+*   (~) Spiller
 */
 
 // ------------------------------------------------------- //
@@ -13,7 +13,7 @@
 
 const   Discord = require('discord.js'),
         ZeroMQ  = require('zeromq'),
-        Reader	= require('fs');
+        Reader  = require('fs');
 
 console.log('\n[.] Dependencies have been loaded.\n');
 
@@ -35,13 +35,13 @@ const   Bot         = new Discord.Client(),
 // ------------------------------------------------------- //
 // Bind ports //
 
-console	.log('[>] Logging discord bot.');
+console .log('[>] Logging discord bot.');
 Bot     .login(Config.Token);
 
-console	.log('[>] Binding PUSH Socket to port ' + Config.Push);
+console .log('[>] Binding PUSH Socket to port ' + Config.Push);
 Socket  .bindSync('tcp://127.0.0.1:3000');
 
-console	.log('[>] Binding PULL Socket to port ' + Config.Pull);
+console .log('[>] Binding PULL Socket to port ' + Config.Pull);
 Listener.connect('tcp://127.0.0.1:' + Config.Pull);
 
 // ------------------------------------------------------- //
@@ -53,11 +53,11 @@ Bot.on('ready', () => {
     // let the server know
     // the the bot is listening
 
-    var Info 	= {
-        Event	: "Ready",
-        BotName	: Bot.user.tag,
-        DMs		: Config.TrackDMs,
-        Count	: Config.TrackAll ? "All" : Config.Listen.length.toString()
+    var Info    = {
+        Event   : "Ready",
+        BotName : Bot.user.tag,
+        DMs     : Config.TrackDMs,
+        Count   : Config.TrackAll ? "All" : Config.Listen.length.toString()
     };
 
     Client.Push("Event", Info);
@@ -102,10 +102,10 @@ Bot.on('message', Message => {
 
 Bot.on('error', Error => {
 
-    var Info 	= {
-        Event	: "Error",
-        Message	: Error.message,
-        Name 	: Error.name
+    var Info    = {
+        Event   : "Error",
+        Message : Error.message,
+        Name    : Error.name
     }
 
     Client.Push("Event", Info);
@@ -144,19 +144,19 @@ Client.Receive = function(Message) {
     // to send as JSON string
 
     var sMessage = {
-        User	: null,
-        Member	: null,
-        Server	: null,
-        Content	: Message.content
+        User    : null,
+        Member  : null,
+        Server  : null,
+        Content : Message.content
     };
 
     // store user details
 
     sMessage.User = {
 
-        ID:		Message.author.id,
-        Name:	Message.author.username,
-        Tag:	Message.author.discriminator
+        ID  : Message.author.id,
+        Name: Message.author.username,
+        Tag : Message.author.discriminator
     };
 
     // if the message is not a
@@ -175,20 +175,20 @@ Client.Receive = function(Message) {
         // store member details
 
         sMessage.Member = {
-            ID			: Message.member.id,
-            Name		: Message.member.nickname,
-            Roles		: {
-                Names	: s_Names,
-                IDs		: s_Roles
+            ID          : Message.member.id,
+            Name        : Message.member.nickname,
+            Roles       : {
+                Names   : s_Names,
+                IDs     : s_Roles
             }
         };
 
         sMessage.Server = {
-            ID			: Message.guild.id,
-            Name		: Message.guild.name,
-            Channel		: {
-                ID		: Message.channel.id,
-                Name	: Message.channel.name
+            ID          : Message.guild.id,
+            Name        : Message.guild.name,
+            Channel     : {
+                ID      : Message.channel.id,
+                Nam     : Message.channel.name
             }
         }
     }
@@ -250,25 +250,25 @@ Client.SendEmbed = function(Data) {
     // ------------------------------------------------------- //
     // Set parameters //
 
-    if(Data.Embed.Color != null) 		// Color
+    if(Data.Embed.Color != null)        // Color
     Embed.setColor(Data.Embed.Color);
 
-    if(Data.Embed.Title != null) 		// Title
+    if(Data.Embed.Title != null)        // Title
     Embed.setTitle(Data.Embed.Title);
 
-    if(Data.Embed.URL != null) 			// URL
+    if(Data.Embed.URL != null)          // URL
     Embed.setURL(Data.Embed.URL);
 
-    if(Data.Embed.Description != null) 	// Description
+    if(Data.Embed.Description != null)  // Description
     Embed.setDescription(Data.Embed.Description);
 
-    if(Data.Embed.Author.Name != null) 	// Author
+    if(Data.Embed.Author.Name != null)  // Author
     Embed.setAuthor(Data.Embed.Author.Name, Data.Embed.Author.Image, Data.Embed.Author.URL);
 
-    if(Data.Embed.Thumbnail != null) 	// Thumbnail
+    if(Data.Embed.Thumbnail != null)    // Thumbnail
     Embed.setThumbnail(Data.Embed.Thumbnail);
 
-    if(Data.Embed.Footer.Text != null) 	// Footer
+    if(Data.Embed.Footer.Text != null)  // Footer
     Embed.setFooter(Data.Embed.Footer.Text, Data.Embed.Footer.Image);
 
     // ------------------------------------------------------- //
