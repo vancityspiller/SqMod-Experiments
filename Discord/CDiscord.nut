@@ -96,6 +96,8 @@ class CDiscord
                 SqLog.Inf(format("Discord logged in as %s.", Info.BotName));
                 SqLog.Inf(format("Tracking Direct Messages: %s.", Info.DMs ? "true" : "false"));
                 SqLog.Inf(format("Tracking %s channels.", Info.Count));
+
+                break;
             }
 
             case "Error":
@@ -181,6 +183,21 @@ class CDiscord
 
         this.Sockets.Socket.SendString(JSON.Stringify(Data));
         return 1;
+    }
+
+    // ------------------------------------------------------- //
+
+    function SendDM(UserID, Message)
+    {
+        local Data =
+        {
+            Function 	= "Direct",
+            Message		= Message,
+            User		= UserID
+        };
+
+        this.Sockets.Socket.SendString(JSON.Stringify(Data));
+        return 1;   
     }
 
     // ------------------------------------------------------- //

@@ -210,6 +210,10 @@ Client.Pull = function(Message) {
         case "Embed":
             Client.SendEmbed(Data);
             break;
+
+        case "Direct":
+            Client.SendDM(Data);
+            break;
     }
 }
 
@@ -271,3 +275,20 @@ Client.SendEmbed = function(Data) {
     // Send the message //
     Channel.send(Embed);
 }
+
+// ------------------------------------------------------- //
+
+Client.SendDM = function(Data)
+{
+    // Find the user
+    const User = Bot.users.cache.get(Data.User);
+
+    // Abort if the user is not found
+    if(User === undefined || User === null) {
+        return;
+    }
+
+    User.send(Data.Message);
+}
+
+// ------------------------------------------------------- //
