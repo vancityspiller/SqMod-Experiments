@@ -12,8 +12,8 @@
 // npm install discord.js
 
 const   Discord = require('discord.js'),
-		ZeroMQ  = require('zeromq'),
-		Reader	= require('fs');
+        ZeroMQ  = require('zeromq'),
+        Reader	= require('fs');
 
 console.log('\n[.] Dependencies have been loaded.\n');
 
@@ -30,8 +30,8 @@ console.log('[.] Initing workers.\n');
 
 const   Bot         = new Discord.Client(),
         Socket      = ZeroMQ.socket("push"),
-		Listener    = ZeroMQ.socket("pull");
-		
+        Listener    = ZeroMQ.socket("pull");
+
 // ------------------------------------------------------- //
 // Bind ports //
 
@@ -48,68 +48,68 @@ Listener.connect('tcp://127.0.0.1:' + Config.Pull);
 // Events //
 
 Bot.on('ready', () => {
-	console.log('\n[.] Discord bot is now online.');
+    console.log('\n[.] Discord bot is now online.');
 
-	// let the server know
-	// the the bot is listening
+    // let the server know
+    // the the bot is listening
 
-	var Info 	= {
-		Event	: "Ready",
-		BotName	: Bot.user.tag,
-		DMs		: Config.TrackDMs,
-		Count	: Config.TrackAll ? "All" : Config.Listen.length.toString()
-	};
+    var Info 	= {
+        Event	: "Ready",
+        BotName	: Bot.user.tag,
+        DMs		: Config.TrackDMs,
+        Count	: Config.TrackAll ? "All" : Config.Listen.length.toString()
+    };
 
-	Client.Push("Event", Info);
+    Client.Push("Event", Info);
 });
 
 // ------------------------------------------------------- //
 
 Bot.on('message', Message => {
 
-	// don't forward the message 
-	// sent by the bot itself
+    // don't forward the message
+    // sent by the bot itself
 
-	if(Message.author.id === Bot.user.id) {
-		return;
-	}
-	
-	// forward direct messages 
-	// if enabled
+    if(Message.author.id === Bot.user.id) {
+        return;
+    }
 
-	if(Message.member === null) {
+    // forward direct messages
+    // if enabled
 
-		if(Config.TrackDMs === true) {
-			Client.Receive(Message);
-		}
+    if(Message.member === null) {
 
-		return;
-	}
+        if(Config.TrackDMs === true) {
+            Client.Receive(Message);
+        }
 
-	if(Config.TrackAll === true) {
-		Client.Receive(Message);
-		return;
-	}
-	
-	if(Config.Listen.find(function(element) { return element === Message.channel.id; })) {
-		Client.Receive(Message);
-		return;	
-	}
-	
+        return;
+    }
+
+    if(Config.TrackAll === true) {
+        Client.Receive(Message);
+        return;
+    }
+
+    if(Config.Listen.find(function(element) { return element === Message.channel.id; })) {
+        Client.Receive(Message);
+        return;
+    }
+
 });
 
 // ------------------------------------------------------- //
 
 Bot.on('error', Error => {
 
-	var Info 	= {
-		Event	: "Error",
-		Message	: Error.message,
-		Name 	: Error.name
-	}
+    var Info 	= {
+        Event	: "Error",
+        Message	: Error.message,
+        Name 	: Error.name
+    }
 
-	Client.Push("Event", Info);
-	
+    Client.Push("Event", Info);
+
 });
 
 // ------------------------------------------------------- //
@@ -121,153 +121,153 @@ var Client = {};
 
 Client.Push = function(mode, message) {
 
-	// Send the message as 
-	// is if it's a string
+    // Send the message as
+    // is if it's a string
 
-	if(typeof(message) == "string")
-	Socket.send([mode, message]);
-	
-	// Send it as JSON 
-	// if its an object
+    if(typeof(message) == "string")
+    Socket.send([mode, message]);
 
-	if(typeof(message) == "object")
-	Socket.send([mode, JSON.stringify(message)]);
+    // Send it as JSON
+    // if its an object
+
+    if(typeof(message) == "object")
+    Socket.send([mode, JSON.stringify(message)]);
 }
 
 // ------------------------------------------------------- //
 
 Client.Receive = function(Message) {
 
-	console.log('[>] Receive - ' + Message.author.username +  ' - ' + Message.content);
+    console.log('[>] Receive - ' + Message.author.username +  ' - ' + Message.content);
 
-	// create an outline object
-	// to send as JSON string
+    // create an outline object
+    // to send as JSON string
 
-	var sMessage = {
-		User	: null,
-		Member	: null,
-		Server	: null,
-		Content	: Message.content
-	};
+    var sMessage = {
+        User	: null,
+        Member	: null,
+        Server	: null,
+        Content	: Message.content
+    };
 
-	// store user details 
+    // store user details
 
-	sMessage.User = {
+    sMessage.User = {
 
-		ID:		Message.author.id,
-		Name:	Message.author.username,
-		Tag:	Message.author.discriminator
-	};
+        ID:		Message.author.id,
+        Name:	Message.author.username,
+        Tag:	Message.author.discriminator
+    };
 
-	// if the message is not a
-	// direct message
+    // if the message is not a
+    // direct message
 
-	if(Message.member != null) {
+    if(Message.member != null) {
 
-		// arrays for role and role names
+        // arrays for role and role names
 
-		var s_Roles = [], s_Names = [];
-		Message.member.roles.cache.array().forEach(element => {
-			s_Roles.push(element.id);
-			s_Names.push(element.name);
-		});
+        var s_Roles = [], s_Names = [];
+        Message.member.roles.cache.array().forEach(element => {
+            s_Roles.push(element.id);
+            s_Names.push(element.name);
+        });
 
-		// store member details
+        // store member details
 
-		sMessage.Member = {
-			ID			: Message.member.id,
-			Name		: Message.member.nickname,
-			Roles		: {
-				Names	: s_Names,
-				IDs		: s_Roles
-			}
-		};
+        sMessage.Member = {
+            ID			: Message.member.id,
+            Name		: Message.member.nickname,
+            Roles		: {
+                Names	: s_Names,
+                IDs		: s_Roles
+            }
+        };
 
-		sMessage.Server = {
-			ID			: Message.guild.id,
-			Name		: Message.guild.name,
-			Channel		: {
-				ID		: Message.channel.id,
-				Name	: Message.channel.name
-			}
-		}
-	}
-	
-	Client.Push("Message", sMessage);
+        sMessage.Server = {
+            ID			: Message.guild.id,
+            Name		: Message.guild.name,
+            Channel		: {
+                ID		: Message.channel.id,
+                Name	: Message.channel.name
+            }
+        }
+    }
+
+    Client.Push("Message", sMessage);
 }
 
 // ------------------------------------------------------- //
 
 Client.Pull = function(Message) {
-	const Data = JSON.parse(Message);
+    const Data = JSON.parse(Message);
 
-	switch(Data.Function)
-	{
-		case "Send":
-			Client.Send(Data);
-			break;
+    switch(Data.Function)
+    {
+        case "Send":
+            Client.Send(Data);
+            break;
 
-		case "Embed":
-			Client.SendEmbed(Data);
-			break;
-	}
+        case "Embed":
+            Client.SendEmbed(Data);
+            break;
+    }
 }
 
 Listener.on('message', function(Message) {
-	Client.Pull(Message);
+    Client.Pull(Message);
 });
 
 // ------------------------------------------------------- //
 
 Client.Send = function(Data) {
-	// Find the channel
-	const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
-	
-	if(Channel != undefined) {
-		Channel.send(Data.Message);
-	}
+    // Find the channel
+    const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
+
+    if(Channel != undefined) {
+        Channel.send(Data.Message);
+    }
 }
 
 // ------------------------------------------------------- //
 
 Client.SendEmbed = function(Data) {
-	// Find the channel
-	const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
+    // Find the channel
+    const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
 
-	// Abort if the channel is not found
-	if(Channel === undefined) {
-		return;
-	}
-	
-	// Create an embed
-	var Embed = new Discord.MessageEmbed()
-	.setTimestamp();
+    // Abort if the channel is not found
+    if(Channel === undefined) {
+        return;
+    }
 
-	// ------------------------------------------------------- //
-	// Set parameters //
+    // Create an embed
+    var Embed = new Discord.MessageEmbed()
+    .setTimestamp();
 
-	if(Data.Embed.Color != null) 		// Color 
-	Embed.setColor(Data.Embed.Color);
+    // ------------------------------------------------------- //
+    // Set parameters //
 
-	if(Data.Embed.Title != null) 		// Title 
-	Embed.setTitle(Data.Embed.Title);
+    if(Data.Embed.Color != null) 		// Color
+    Embed.setColor(Data.Embed.Color);
 
-	if(Data.Embed.URL != null) 			// URL
-	Embed.setURL(Data.Embed.URL);
+    if(Data.Embed.Title != null) 		// Title
+    Embed.setTitle(Data.Embed.Title);
 
-	if(Data.Embed.Description != null) 	// Description
-	Embed.setDescription(Data.Embed.Description);
+    if(Data.Embed.URL != null) 			// URL
+    Embed.setURL(Data.Embed.URL);
 
-	if(Data.Embed.Author.Name != null) 	// Author
-	Embed.setAuthor(Data.Embed.Author.Name, Data.Embed.Author.Image, Data.Embed.Author.URL);
-	
-	if(Data.Embed.Thumbnail != null) 	// Thumbnail
-	Embed.setThumbnail(Data.Embed.Thumbnail);
+    if(Data.Embed.Description != null) 	// Description
+    Embed.setDescription(Data.Embed.Description);
 
-	if(Data.Embed.Footer.Text != null) 	// Footer
-	Embed.setFooter(Data.Embed.Footer.Text, Data.Embed.Footer.Image);
+    if(Data.Embed.Author.Name != null) 	// Author
+    Embed.setAuthor(Data.Embed.Author.Name, Data.Embed.Author.Image, Data.Embed.Author.URL);
 
-	// ------------------------------------------------------- //
-	// Send the message //
-	Channel.send(Embed);
+    if(Data.Embed.Thumbnail != null) 	// Thumbnail
+    Embed.setThumbnail(Data.Embed.Thumbnail);
+
+    if(Data.Embed.Footer.Text != null) 	// Footer
+    Embed.setFooter(Data.Embed.Footer.Text, Data.Embed.Footer.Image);
+
+    // ------------------------------------------------------- //
+    // Send the message //
+    Channel.send(Embed);
 }
