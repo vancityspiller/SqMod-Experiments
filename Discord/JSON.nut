@@ -31,7 +31,7 @@ class JSON
     static function ParseFile(String_)
     {
         // Read from file
-        local   Reader  = file("config.json", "rb"), Data = "",
+        local   Reader  = file(String_, "rb"), Data = "",
                 Blob_   = Reader.readblob(Reader.len());
 
         // And store it in "Data"
