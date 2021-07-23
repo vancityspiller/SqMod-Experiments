@@ -53,7 +53,7 @@ Bot.on('ready', () => {
     // let the server know
     // the the bot is listening
 
-    var Info    = {
+    const Info    = {
         Event   : "Ready",
         BotName : Bot.user.tag,
         DMs     : Config.TrackDMs,
@@ -102,7 +102,7 @@ Bot.on('message', Message => {
 
 Bot.on('error', Error => {
 
-    var Info    = {
+    const Info    = {
         Event   : "Error",
         Message : Error.message,
         Name    : Error.name
@@ -115,11 +115,11 @@ Bot.on('error', Error => {
 // ------------------------------------------------------- //
 // Functions //
 
-var Client = {};
+const Client = {};
 
 // ------------------------------------------------------- //
 
-Client.Push = function(mode, message) {
+Client.Push = (mode, message) => {
 
     // Send the message as
     // is if it's a string
@@ -136,14 +136,14 @@ Client.Push = function(mode, message) {
 
 // ------------------------------------------------------- //
 
-Client.Receive = function(Message) {
+Client.Receive = (Message) => {
 
     console.log('[>] Receive - ' + Message.author.username +  ' - ' + Message.content);
 
     // create an outline object
     // to send as JSON string
 
-    var sMessage = {
+    const sMessage = {
         User    : null,
         Member  : null,
         Server  : null,
@@ -166,7 +166,7 @@ Client.Receive = function(Message) {
 
         // arrays for role and role names
 
-        var s_Roles = [], s_Names = [];
+        const s_Roles = [], s_Names = [];
         Message.member.roles.cache.array().forEach(element => {
             s_Roles.push(element.id);
             s_Names.push(element.name);
@@ -198,7 +198,8 @@ Client.Receive = function(Message) {
 
 // ------------------------------------------------------- //
 
-Client.Pull = function(Message) {
+Client.Pull = (Message) => {
+
     const Data = JSON.parse(Message);
 
     switch(Data.Function)
@@ -217,13 +218,14 @@ Client.Pull = function(Message) {
     }
 }
 
-Listener.on('message', function(Message) {
+Listener.on('message', (Message) => {
     Client.Pull(Message);
 });
 
 // ------------------------------------------------------- //
 
-Client.Send = function(Data) {
+Client.Send = (Data) => {
+
     // Find the channel
     const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
 
@@ -234,7 +236,8 @@ Client.Send = function(Data) {
 
 // ------------------------------------------------------- //
 
-Client.SendEmbed = function(Data) {
+Client.SendEmbed = (Data) => {
+
     // Find the channel
     const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
 
@@ -244,7 +247,7 @@ Client.SendEmbed = function(Data) {
     }
 
     // Create an embed
-    var Embed = new Discord.MessageEmbed()
+    const Embed = new Discord.MessageEmbed()
     .setTimestamp();
 
     // ------------------------------------------------------- //
@@ -278,8 +281,8 @@ Client.SendEmbed = function(Data) {
 
 // ------------------------------------------------------- //
 
-Client.SendDM = function(Data)
-{
+Client.SendDM = (Data) => {
+
     // Find the user
     const User = Bot.users.cache.get(Data.User);
 
