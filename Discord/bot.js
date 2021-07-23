@@ -8,8 +8,8 @@
 // ------------------------------------------------------- //
 // Dependencies //
 
-// npm install zeromq@5
-// npm install discord.js
+// dependencies included in package.json
+// run: npm install
 
 const   Discord = require('discord.js'),
         ZeroMQ  = require('zeromq'),

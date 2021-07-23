@@ -1,0 +1,16 @@
+{
+  "name": "sqdiscord",
+  "version": "1.0.0",
+  "description": "- bot.js is node file\r - CDiscord.nut is the ZeroMQ SqMod file\r - config.json contains configuration for bot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "test": "npm run start"
+  },
+  "author": "Spiller",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.5.3",
+    "zeromq": "^5.2.8"
+  }
+}
