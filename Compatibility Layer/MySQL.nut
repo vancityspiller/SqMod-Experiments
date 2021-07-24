@@ -13,7 +13,7 @@ function mysql_errno(db) { return db.LastErrNo; }
 
 function mysql_query(db, qs) 
 {
-    local qs_ = SqString(qs.tolower()).Trim();
+    local qs_ = SqString(qs).ToLower().Trim();
 
     // check what kind of query it is
     if(qs_.StartsWith("select"))
