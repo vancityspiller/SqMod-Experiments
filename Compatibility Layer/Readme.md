@@ -4,8 +4,6 @@ With the compatibility layer enabled, you can make scripts written for the offic
 
 For other official plugins (SQLite, MySQL, Confloader, INI), these wrapper functions can be used.
 
-<br />
-
 --------------------
 
 <br />
@@ -21,8 +19,6 @@ dofile <- function(path) { SqCore.LoadScript(true, path); };
 
 Or list them all under **Scripts** section of sqmod.ini.
 
-<br />
-
 --------------------
 
 <br />
@@ -31,7 +27,7 @@ Or list them all under **Scripts** section of sqmod.ini.
 Announcer plugin won't load, but you don't require that. <br />
 
 ```d
-_Annoucne <- SqUtils.Announcer(60, "http://master.vc-mp.org/announce.php").Run(),
+_Announce <- SqUtils.Announcer(60, "http://master.vc-mp.org/announce.php").Run(),
 ```
 
 If you want to announce to multiple master, simply create more.
@@ -45,3 +41,20 @@ _Announcers <-
 foreach(Announcer in _Announcers)
 Announcer.Run();
 ```
+
+--------------------
+
+<br />
+
+## Notes
+SqMod does not port broken code and logic from the official plugin. Some things will still need to be changed.
+
+<br />
+
+- Instance typename are not just "instance" in SqMod. Player instances will have a typename of "SqPlayer", vehicles with "SqVehicle" and so on.
+
+- Returning `false` from events will not disable its functionality. You'll need to use `SqCore.SetState(0)` inside the said event to disable its native functionality.
+
+- You'll need to replace stream constructors `Stream()` with the `Stream` global variable or you can use methods defined in SqMod.
+
+- If using a custom error handler, you'll need to disable SqMod's error handler from sqmod.ini. Although, the recommend course of action will be to not use a custom one when you can bind to console logs.
