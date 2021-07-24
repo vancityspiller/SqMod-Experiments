@@ -7,7 +7,7 @@ function DisconnectSQL(p) { SQLite.Release(); return true; }
 function QuerySQL(db, qs)
 {
     // trim any whitespace
-    local qs_ = SqString(qs.tolower()).Trim();
+    local qs_ = SqString(qs).Trim().ToLower();
 
     // check if the query selects records
     if(qs_.StartsWith("select"))

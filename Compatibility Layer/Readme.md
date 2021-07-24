@@ -30,16 +30,13 @@ Announcer plugin won't load, but you don't require that. <br />
 _Announce <- SqUtils.Announcer(60, "http://master.vc-mp.org/announce.php").Run(),
 ```
 
-If you want to announce to multiple master, simply create more.
+If you want to announce to multiple masterlists, simply create more.
 ```d
 _Announcers <-
 {
-    Official    = SqUtils.Announcer(60, "http://master.vc-mp.org/announce.php"),
-    Thijn       = SqUtils.Announcer(60, "http://master.thijn.ovh/")
+    Official    = SqUtils.Announcer(60, "http://master.vc-mp.org/announce.php").Run(),
+    Thijn       = SqUtils.Announcer(60, "http://master.thijn.ovh/").Run()
 }
-
-foreach(Announcer in _Announcers)
-Announcer.Run();
 ```
 
 --------------------
