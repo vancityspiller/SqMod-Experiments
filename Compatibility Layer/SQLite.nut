@@ -2,7 +2,7 @@
 // ------------------------------------------------------- //
 
 function ConnectSQL(p) { return SQLite.Connection(p); }
-function DisconnectSQL(p) { SQLite.Release(); return true; }
+function DisconnectSQL(p) { p.Release(); return true; }
 
 function QuerySQL(db, qs)
 {
