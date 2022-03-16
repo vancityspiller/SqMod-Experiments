@@ -1,10 +1,10 @@
 {
   "name": "sqdiscord",
   "version": "1.0.0",
-  "description": "- bot.js is node file\r - CDiscord.nut is the ZeroMQ SqMod file\r - config.json contains configuration for bot",
-  "main": "bot.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js",
+    "start": "node index.js",
     "test": "npm run start"
   },
   "author": "Spiller",
