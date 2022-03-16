@@ -1,116 +1,43 @@
-// ------------------------------------------------------- //
-
-/*
-*   Simple discord bot for SqMod using ZeroMQ.
-*   (~) Spiller
-*/
-
-// ------------------------------------------------------- //
-
-SqCore.On().ScriptLoaded.Connect(this, function ()
+ZMQ <-
 {
-    // Make a global context
-    Context <- SqZMQ.Context();
+    Config  = JSON.ParseFile("config.json"),
+    Context = SqZMQ.Context(),
+    Sockets = { Listener = null, Sender = null },
 
-    // Init an instance
-    Discord <- CDiscord();
+    // ------------------------------------------------------- //
 
-    // Process every 100ms
-    SqRoutine(this, SqZMQ.Process, 100);
-});
+    function Init()
+    {
+        Sockets.Listener    = Context.Socket(SqZmq.PULL);
+        Sockets.Sender      = Context.Socket(SqZmq.PUSH);
 
-// ------------------------------------------------------- //
+        Sockets.Listener    .Connect("tcp://127.0.0.1:{}", Config.Push);
+        Sockets.Sender      .Connect("tcp://127.0.0.1:{}", Config.Pull);
 
-class CDiscord
+        SqLog.Scs("[ZMQ] PUSH {}, PULL {}.", Config.Pull, Config.Push);
+
+        Sockets.Listener.OnData(function(Received, IsMulti)
+        {
+            if(!IsMulti) return;
+            local Data = JSON.Parse(Received[1]);
+
+            if(Received[0] == "Event") printf("[ZMQ] [EVENT] {} - {}.", Data.Event, Data.Message);
+            else if(Received[0] == "DiscordMessage") Discord.OnMessage(Data);
+        });
+    }
+
+    // ------------------------------------------------------- //
+
+    function Push(Data)
+    {
+        Sockets.Sender.SendString(JSON.Encode(Data));
+    }
+}
+
+// ======================================================= //
+
+Discord <-
 {
-    Config  = null;
-    Sockets = null;
-
-    // ------------------------------------------------------- //
-
-    constructor()
-    {
-        // ------------------------------------------------------- //
-        // Instances //
-
-        this.Sockets =
-        {
-            Listener    = Context.Socket(SqZmq.PULL),
-            Socket      = Context.Socket(SqZmq.PUSH)
-        };
-
-        // ------------------------------------------------------- //
-        // Load Config //
-
-        Config = JSON.ParseFile("config.json");
-
-        // ------------------------------------------------------- //
-        // Bind ZMQ to ports //
-
-        this.Sockets.Listener   .Connect (format("tcp://127.0.0.1:%s", this.Config.Push));
-        this.Sockets.Socket     .Bind    (format("tcp://127.0.0.1:%s", this.Config.Pull));
-
-        SqLog.Scs(format("ZeroMQ Connected @ PUSH %s, PULL %s", this.Config.Pull, this.Config.Push));
-
-        // ------------------------------------------------------- //
-
-        Sockets.Listener.OnData(this.OnData);
-    }
-
-    // ------------------------------------------------------- //
-
-    function OnData(Data, IsMulti)
-    {
-        // I'm not really using any
-        // single stringed data
-
-        if(!IsMulti) return 1;
-        local Info = JSON.Parse(Data[1]);
-
-        // Determine the type of data
-        switch(Data[0])
-        {
-            case "Event":
-            {
-                Discord.OnEvent(Info);
-                break;
-            }
-
-            case "Message":
-            {
-                Discord.OnMessage(Info);
-                break;
-            }
-
-        }
-    }
-
-    // ------------------------------------------------------- //
-
-    function OnEvent(Info)
-    {
-        switch(Info.Event)
-        {
-            case "Ready":
-            {
-                SqLog.Inf(format("Discord logged in as %s.", Info.BotName));
-                SqLog.Inf(format("Tracking Direct Messages: %s.", Info.DMs ? "true" : "false"));
-                SqLog.Inf(format("Tracking %s channels.", Info.Count));
-
-                break;
-            }
-
-            case "Error":
-            {
-                SqLog.Dbg(format("Discord Error: %s - %s", Info.Name, Info.Message));
-                break;
-            }
-
-        }
-    }
-
-    // ------------------------------------------------------- //
-
     function OnMessage(Info)
     {
         SqLog.Inf("Message Received: ");
@@ -124,32 +51,13 @@ class CDiscord
                 SqLog.Inf("   " + Key_ + ": " + Value_);
             }
         }
-
-    }
-
-    // ------------------------------------------------------- //
-
-    function SendMessage(Channel, Message)
-    {
-        local Data =
-        {
-            Function    = "Send",
-            Message     = Message,
-            Channel     = Channel
-        };
-
-        this.Sockets.Socket.SendString(JSON.Stringify(Data));
-        return 1;
     }
 
     // ------------------------------------------------------- //
 
     function CreateEmbed()
     {
-        // this function returns an
-        // outline table, NOT an object
-
-        local Table =
+        local Embed =
         {
             Color       = null,
             Title       = null,
@@ -167,38 +75,47 @@ class CDiscord
             }
         };
 
-        return Table;
+        return Embed;
     }
 
     // ------------------------------------------------------- //
 
-    function SendEmbed(Channel, EmbedData)
+    function SendMessage(Channel, Message)
     {
-        local Data =
-        {
-            Function    = "Embed",
-            Channel     = Channel,
-            Embed       = EmbedData
-        };
+        ZMQ.Push(JSON.Encode({
 
-        this.Sockets.Socket.SendString(JSON.Stringify(Data));
-        return 1;
+            Type        = "SendMessage",
+            Message     = Message,
+            Channel     = Channel
+        }));
     }
 
     // ------------------------------------------------------- //
 
     function SendDM(UserID, Message)
     {
-        local Data =
-        {
-            Function    = "Direct",
+        ZMQ.Push(JSON.Encode({
+
+            Type        = "SendDM",
             Message     = Message,
             User        = UserID
-        };
-
-        this.Sockets.Socket.SendString(JSON.Stringify(Data));
-        return 1;   
+        }));
     }
 
     // ------------------------------------------------------- //
+
+    function SendEmbed(Channel, Embed)
+    {
+        ZMQ.Push(JSON.Encode({
+
+            Type        = "SendEmbed",
+            Embed       = Embed,
+            Channel     = Channel
+        }));
+    }
 }
+
+// ======================================================= //
+
+ZMQ.Init();
+SqRoutine(this, SqZMQ.Process, 100);

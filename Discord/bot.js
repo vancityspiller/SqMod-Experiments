@@ -1,297 +1,280 @@
-// ------------------------------------------------------- //
-
-/*
-*   Simple discord bot for SqMod using ZeroMQ.
-*   (~) Spiller
-*/
-
-// ------------------------------------------------------- //
-// Dependencies //
-
+// ======================================================= //
 // dependencies included in package.json
 // run: npm install
+// ======================================================= //
 
-const   Discord = require('discord.js'),
-        ZeroMQ  = require('zeromq'),
-        Reader  = require('fs');
+const Config = require('./config.json');
 
-console.log('\n[.] Dependencies have been loaded.\n');
+const ZMQ = {
 
-// ------------------------------------------------------- //
-// Configuration //
+    Instance    : require('zeromq'),
+    Socket      : undefined,
+    Listener    : undefined,
 
-console.log('[.] Loading configuration.\n');
-const Config = JSON.parse(Reader.readFileSync('config.json'));
+    // ------------------------------------------------------- //
 
-// ------------------------------------------------------- //
-// Initing Workers //
+    Init() {
+        this.Socket     = this.Instance.socket('push');
+        this.Listener   = this.Instance.socket('pull');
 
-console.log('[.] Initing workers.\n');
+        console         .log(`[>] (ZMQ) PUSH Socket - ${Config.Push}`);
+        this.Socket     .bindSync('tcp://127.0.0.1:' + Config.Push);
 
-const   Bot         = new Discord.Client(),
-        Socket      = ZeroMQ.socket("push"),
-        Listener    = ZeroMQ.socket("pull");
+        console         .log(`[>] (ZMQ) PULL Socket - ${Config.Pull}`);
+        this.Listener   .connect('tcp://127.0.0.1:' + Config.Pull);
 
-// ------------------------------------------------------- //
-// Bind ports //
+        const __this = this;
+        this.Listener.on('message', function(Message) {
+            __this.Receive(Message);
+        });
+    },
 
-console .log('[>] Logging discord bot.');
-Bot     .login(Config.Token);
+    // ------------------------------------------------------- //
+    
+    Transmit(Key, Message) {
 
-console .log('[>] Binding PUSH Socket to port ' + Config.Push);
-Socket  .bindSync('tcp://127.0.0.1:3000');
+        // Send the message as is if it's a string
+        if(typeof(Message) == "string")
+        this.Socket.send([Key, Message]);
 
-console .log('[>] Binding PULL Socket to port ' + Config.Pull);
-Listener.connect('tcp://127.0.0.1:' + Config.Pull);
+        // Send it as JSON if its an object
+        if(typeof(Message) == "object") {
 
-// ------------------------------------------------------- //
-// Events //
+            try {
+                this.Socket.send([Key, JSON.stringify(Message)]);
+            } catch(e) { 
+                console.log('[x] JSON decoding error @ZMQ.Transmit.'); 
+                return;
+            }
+        }
+    },
 
-Bot.on('ready', () => {
-    console.log('\n[.] Discord bot is now online.');
+    // ------------------------------------------------------- //
 
-    // let the server know
-    // the the bot is listening
+    Receive(Data) {
 
-    const Info    = {
-        Event   : "Ready",
-        BotName : Bot.user.tag,
-        DMs     : Config.TrackDMs,
-        Count   : Config.TrackAll ? "All" : Config.Listen.length.toString()
-    };
-
-    Client.Push("Event", Info);
-});
-
-// ------------------------------------------------------- //
-
-Bot.on('message', Message => {
-
-    // don't forward the message
-    // sent by the bot itself
-
-    if(Message.author.id === Bot.user.id) {
-        return;
-    }
-
-    // forward direct messages
-    // if enabled
-
-    if(Message.member === null) {
-
-        if(Config.TrackDMs === true) {
-            Client.Receive(Message);
+        try {
+            Data = JSON.parse(Data);
+        } catch(e) { 
+            console.log('[x] JSON parsing error @ZMQ.Receive.'); 
+            return;
         }
 
-        return;
+        switch(Data.Function)
+        {
+            case "SendMessage":
+                Discord.Send.Message(Data);
+                break;
+    
+            case "SendDM":
+                Discord.Send.Direct(Data);
+                break;
+
+            case "SendEmbed":
+                Discord.Send.Embed(Data);
+                break;
+
+            default:
+                break;
+        }
     }
-
-    if(Config.TrackAll === true) {
-        Client.Receive(Message);
-        return;
-    }
-
-    if(Config.Listen.find(function(element) { return element === Message.channel.id; })) {
-        Client.Receive(Message);
-        return;
-    }
-
-});
-
-// ------------------------------------------------------- //
-
-Bot.on('error', Error => {
-
-    const Info    = {
-        Event   : "Error",
-        Message : Error.message,
-        Name    : Error.name
-    }
-
-    Client.Push("Event", Info);
-
-});
-
-// ------------------------------------------------------- //
-// Functions //
-
-const Client = {};
-
-// ------------------------------------------------------- //
-
-Client.Push = (mode, message) => {
-
-    // Send the message as
-    // is if it's a string
-
-    if(typeof(message) == "string")
-    Socket.send([mode, message]);
-
-    // Send it as JSON
-    // if its an object
-
-    if(typeof(message) == "object")
-    Socket.send([mode, JSON.stringify(message)]);
 }
 
-// ------------------------------------------------------- //
+// ======================================================= //
 
-Client.Receive = (Message) => {
+const Discord = {
 
-    console.log('[>] Receive - ' + Message.author.username +  ' - ' + Message.content);
+    Instance    : require('discord.js'),
+    Bot         : undefined,
 
-    // create an outline object
-    // to send as JSON string
+    Ready       : false,
 
-    const sMessage = {
-        User    : null,
-        Member  : null,
-        Server  : null,
-        Content : Message.content
-    };
+    // ------------------------------------------------------- //
 
-    // store user details
+    Init() {
 
-    sMessage.User = {
+        this.Bot = new this.Instance.Client();
+        this.Bot.login(Config.Token);
 
-        ID  : Message.author.id,
-        Name: Message.author.username,
-        Tag : Message.author.discriminator
-    };
+        // ------------------------------------------------------- //
 
-    // if the message is not a
-    // direct message
+        const __this = this;
+        this.Bot.on('ready', () => {
 
-    if(Message.member != null) {
-
-        // arrays for role and role names
-
-        const s_Roles = [], s_Names = [];
-        Message.member.roles.cache.array().forEach(element => {
-            s_Roles.push(element.id);
-            s_Names.push(element.name);
+            __this.Ready = true;
+            console.log(`\n[.] (Discord) Bot Ready - ${__this.Bot.user.tag}.\n`);
+    
+            // tell the server that discord bot is ready
+            ZMQ.Transmit('Event', {
+                Event   : `Bot logged in as ${this.Bot.user.tag}`,
+                Message : `Tracking ${Config.TrackAll ? "All" : Config.Listen.length.toString()} channels`
+            });
         });
+        
+        this.Bot.on('message', Message => {
+            __this.Filter(Message);
+        });
+    },
 
-        // store member details
+    // ------------------------------------------------------- //
 
-        sMessage.Member = {
-            ID          : Message.member.id,
-            Name        : Message.member.nickname,
-            Roles       : {
-                Names   : s_Names,
-                IDs     : s_Roles
+    Filter(Message) {
+
+        // don't forward the message
+        // sent by the bot itself
+        if(Message.author.id === this.Bot.user.id) {
+            return;
+        }
+
+        // forward direct messages
+        if(Message.member === null) {
+
+            // if DM tracking is enabled
+            if(Config.TrackDMs === true) {
+                this.Receive(Message);
             }
+
+            return;
+        }
+
+        // ------------------------------------------------------- //
+
+        if(Config.TrackAll === true) {
+            this.Receive(Message);
+            return;
+        }
+
+        if(Config.Listen.find(function(element) { return element === Message.channel.id; })) {
+            this.Receive(Message);
+            return;
+        }
+    },
+
+    // ------------------------------------------------------- //
+
+    Receive(Message) {
+
+        console.log(`[>] (Discord) ${Message.author.username} [#${Message.channel.name}] ${Message.content}`);
+        
+        // ------------------------------------------------------- //
+
+        // create an outline object
+        // to send as JSON string
+        const Message_ = {
+            
+            User    : null,
+            Member  : null,
+            Server  : null,
+            Content : Message.content
         };
 
-        sMessage.Server = {
-            ID          : Message.guild.id,
-            Name        : Message.guild.name,
-            Channel     : {
-                ID      : Message.channel.id,
-                Nam     : Message.channel.name
+        // store user details
+        Message_.User = {
+
+            ID  : Message.author.id,
+            Name: Message.author.username,
+            Tag : Message.author.discriminator
+        };
+
+        // if the message is not a direct message
+        // store the details of server & member
+        if(Message.member) {
+
+            const s_Roles = [], s_Names = [];
+            Message.member.roles.cache.array().forEach(element => {
+
+                s_Roles.push(element.id);
+                s_Names.push(element.name);
+            });
+
+            Message_.Member = {
+
+                ID          : Message.member.id,
+                Name        : Message.member.nickname === null ? Message.author.username : Message.member.nickname,
+                Roles       : {
+                    Names   : s_Names,
+                    IDs     : s_Roles
+                }
+            };
+
+            Message_.Server = {
+
+                ID          : Message.guild.id,
+                Name        : Message.guild.name,
+                Channel     : {
+                    ID      : Message.channel.id,
+                    Name    : Message.channel.name
+                }
             }
         }
-    }
 
-    Client.Push("Message", sMessage);
-}
-
-// ------------------------------------------------------- //
-
-Client.Pull = (Message) => {
-
-    const Data = JSON.parse(Message);
-
-    switch(Data.Function)
-    {
-        case "Send":
-            Client.Send(Data);
-            break;
-
-        case "Embed":
-            Client.SendEmbed(Data);
-            break;
-
-        case "Direct":
-            Client.SendDM(Data);
-            break;
-    }
-}
-
-Listener.on('message', (Message) => {
-    Client.Pull(Message);
-});
-
-// ------------------------------------------------------- //
-
-Client.Send = (Data) => {
-
-    // Find the channel
-    const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
-
-    if(Channel != undefined) {
-        Channel.send(Data.Message);
-    }
-}
-
-// ------------------------------------------------------- //
-
-Client.SendEmbed = (Data) => {
-
-    // Find the channel
-    const Channel = Bot.channels.cache.array().find(channel => channel.id === Data.Channel);
-
-    // Abort if the channel is not found
-    if(Channel === undefined) {
-        return;
-    }
-
-    // Create an embed
-    const Embed = new Discord.MessageEmbed()
-    .setTimestamp();
+        ZMQ.Transmit("DiscordMessage", Message_);
+    },
 
     // ------------------------------------------------------- //
-    // Set parameters //
 
-    if(Data.Embed.Color != null)        // Color
-    Embed.setColor(Data.Embed.Color);
+    Send: {
 
-    if(Data.Embed.Title != null)        // Title
-    Embed.setTitle(Data.Embed.Title);
+        // ------------------------------------------------------- //
+        // Send a message
 
-    if(Data.Embed.URL != null)          // URL
-    Embed.setURL(Data.Embed.URL);
+        Message(Data) {
 
-    if(Data.Embed.Description != null)  // Description
-    Embed.setDescription(Data.Embed.Description);
+            // the channel is cached?
+            const Channel = Discord.Bot.channels.cache.array()
+                .find(channel => channel.id === Data.Channel);
+        
+            if(Channel) Channel.send(Data.Message);
+        },
 
-    if(Data.Embed.Author.Name != null)  // Author
-    Embed.setAuthor(Data.Embed.Author.Name, Data.Embed.Author.Image, Data.Embed.Author.URL);
+        // ------------------------------------------------------- //
+        // Direct message
 
-    if(Data.Embed.Thumbnail != null)    // Thumbnail
-    Embed.setThumbnail(Data.Embed.Thumbnail);
+        Direct(Data) {
 
-    if(Data.Embed.Footer.Text != null)  // Footer
-    Embed.setFooter(Data.Embed.Footer.Text, Data.Embed.Footer.Image);
+            // the user is cached?
+            const User = Discord.Bot.users.cache.get(Data.User);
+            if(User) User.send(Data.Message);
+        },
 
-    // ------------------------------------------------------- //
-    // Send the message //
-    Channel.send(Embed);
-}
+        // ------------------------------------------------------- //
+        // Embed
 
-// ------------------------------------------------------- //
+        Embed(Data) {
 
-Client.SendDM = (Data) => {
+            // the channel is cached?
+            const Channel = Discord.Bot.channels.cache.array()
+                    .find(Channel => Channel.id === Data.Channel);
+        
+            // Abort if the channel is not found
+            if(Channel === undefined) {
+                return;
+            }
+        
+            const Embed = new Discord.Instance.MessageEmbed().setTimestamp();
+        
+            // ------------------------------------------------------- //
+            // Set parameters //
+        
+            if(Data.Embed.Color)        Embed.setColor(Data.Embed.Color);
+            if(Data.Embed.Title)        Embed.setTitle(Data.Embed.Title);
+            if(Data.Embed.URL)          Embed.setURL(Data.Embed.URL);
+            if(Data.Embed.Description)  Embed.setDescription(Data.Embed.Description);
+            if(Data.Embed.Author.Name)  Embed.setAuthor(Data.Embed.Author.Name, Data.Embed.Author.Image, Data.Embed.Author.URL);
+            if(Data.Embed.Thumbnail)    Embed.setThumbnail(Data.Embed.Thumbnail);
+            if(Data.Embed.Footer.Text)  Embed.setFooter(Data.Embed.Footer.Text, Data.Embed.Footer.Image);
+        
+            // ------------------------------------------------------- //
+            // Send the message //
 
-    // Find the user
-    const User = Bot.users.cache.get(Data.User);
-
-    // Abort if the user is not found
-    if(User === undefined || User === null) {
-        return;
+            Channel.send(Embed);
+        }
     }
-
-    User.send(Data.Message);
 }
 
-// ------------------------------------------------------- //
+// ======================================================= //
+
+ZMQ.Init();
+Discord.Init();
+
+// ======================================================= //
