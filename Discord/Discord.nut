@@ -12,7 +12,7 @@ ZMQ <-
         Sockets.Sender      = Context.Socket(SqZmq.PUSH);
 
         Sockets.Listener    .Connect("tcp://127.0.0.1:{}", Config.Push);
-        Sockets.Sender      .Connect("tcp://127.0.0.1:{}", Config.Pull);
+        Sockets.Sender      .Bind   ("tcp://127.0.0.1:{}", Config.Pull);
 
         SqLog.Scs("[ZMQ] PUSH {}, PULL {}.", Config.Pull, Config.Push);
 
